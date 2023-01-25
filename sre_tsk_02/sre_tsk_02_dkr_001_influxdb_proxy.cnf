@@ -1,0 +1,13 @@
+server {
+  listen 4400;
+  listen [::]:4400;
+  
+  server_name influxdb.sky.services.adam.horden.in;
+  
+  location / {
+    client_max_body_size 128m;
+    proxy_pass http://influxdb:8086;
+    proxy_set_header X-Forwarded-For $remote_addr;
+  }
+
+}

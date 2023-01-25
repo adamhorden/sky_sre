@@ -1,0 +1,34 @@
+
+global:
+  evaluation_interval: 15s
+  scrape_interval:     30s
+  scrape_timeout:      28s
+
+alerting:
+  alertmanagers:
+  - scheme: http
+    static_configs:
+    - targets:
+      - "alertmanager:9093"
+
+scrape_configs:
+
+  # --------------------------------------------------------------------------------------
+  # influxdb.sky.services.adam.horden.in
+  # --------------------------------------------------------------------------------------
+
+  - job_name: 'influxdb.sky.services.adam.horden.in'
+    scheme: http
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['influxdb:8086']
+
+  # --------------------------------------------------------------------------------------
+  # node.prometheus.sky.services.adam.horden.in
+  # --------------------------------------------------------------------------------------
+
+  - job_name: 'node.prometheus.sky.services.adam.horden.in'
+    scheme: http
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['node_exporter:9100']

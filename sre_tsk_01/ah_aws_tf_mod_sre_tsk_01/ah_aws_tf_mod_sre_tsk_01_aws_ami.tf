@@ -38,7 +38,7 @@ data "aws_ami" "this" {
 
           format(
             "%s",
-            "debian-11-arm64-*"
+            "debian-10-arm64-*"
           )
 
         ]

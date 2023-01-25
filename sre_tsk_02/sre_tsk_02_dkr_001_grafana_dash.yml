@@ -1,0 +1,13 @@
+apiVersion: 1
+
+# ----------------------------------------------------------------------------------------
+# Providers
+# ----------------------------------------------------------------------------------------
+
+providers:
+  - name: dashboards
+    options:
+      foldersFromFilesStructure: true
+      path: /etc/grafana/dashboards
+    type: file
+    updateIntervalSeconds: 30

@@ -72,6 +72,70 @@ locals {
   # Local:
   # --------------------------------------------------------------------------------------
 
+  # local.ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_eng_rul
+
+  ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_eng_rul = formatlist(
+    "%s",
+    tolist(
+      [
+
+        format(
+          "%s",
+          "all-all"
+        )
+
+      ]
+    )
+  )
+
+  # --------------------------------------------------------------------------------------
+  # Local:
+  # --------------------------------------------------------------------------------------
+
+  # local.ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_ing_pfx_lst_id
+
+  ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_ing_pfx_lst_id = formatlist(
+    "%s",
+    tolist(
+      [
+
+        format(
+          "%s",
+          lookup(
+            aws_ec2_managed_prefix_list.this,
+            "id",
+            tostring("")
+          )
+        )
+
+      ]
+    )
+  )
+
+  # --------------------------------------------------------------------------------------
+  # Local:
+  # --------------------------------------------------------------------------------------
+
+  # local.ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_ing_rul
+
+  ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_ing_rul = formatlist(
+    "%s",
+    tolist(
+      [
+
+        format(
+          "%s",
+          "http-80-tcp"
+        )
+
+      ]
+    )
+  )
+
+  # --------------------------------------------------------------------------------------
+  # Local:
+  # --------------------------------------------------------------------------------------
+
   # local.ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_nm
 
   ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_nm = format(

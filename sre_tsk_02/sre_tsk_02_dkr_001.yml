@@ -1,0 +1,481 @@
+# Copyright (c) 2023 - 2023 Adam Horden <adam.horden@horden.engineering>
+
+# ----------------------------------------------------------------------------------------
+# Configuration:
+# ----------------------------------------------------------------------------------------
+
+#
+
+x-sre-tsk-mon: &SRE_TSK_MON
+  SRE_TSK_MON_USR_NM: "${SRE_TSK_MON_USR_NM}"
+  SRE_TSK_MON_USR_PW: "${SRE_TSK_MON_USR_PW}"
+
+# ----------------------------------------------------------------------------------------
+# Configuration: Grafana
+# ----------------------------------------------------------------------------------------
+
+# This configuration is used for the service `sre_tsk_mon_grafana` to use a previously
+# provisioned PostgreSQL database for Grafana.
+
+x-sre-tsk-mon-grafana: &SRE_TSK_MON_GRAFANA
+  SRE_TSK_MON_GRAFANA_DB_HST: "postgres"
+  SRE_TSK_MON_GRAFANA_DB_NM:  "grafana"
+  SRE_TSK_MON_GRAFANA_DB_PW:  "${SRE_TSK_MON_USR_PW}"
+  SRE_TSK_MON_GRAFANA_DB_TYP: "postgres"
+  SRE_TSK_MON_GRAFANA_DB_USR: "${SRE_TSK_MON_USR_NM}"
+
+# ----------------------------------------------------------------------------------------
+# Configuration: Grafana: Database: PostgreSQL
+# ----------------------------------------------------------------------------------------
+
+# This configuration is used for the service `sre_tsk_mon_grafana_db` to provision a
+# PostgreSQL database for Grafana.
+
+x-sre-tsk-mon-grafana-db-postgresql: &SRE_TSK_MON_DB_POSTGRES
+  POSTGRES_DB:       "grafana"
+  POSTGRES_PASSWORD: "${SRE_TSK_MON_USR_PW}"
+  POSTGRES_USER:     "${SRE_TSK_MON_USR_NM}"
+
+# ----------------------------------------------------------------------------------------
+# Configuration: InfluxDB
+# ----------------------------------------------------------------------------------------
+
+# This configuration is used for various services to use a previously provisioned InfluxDB.
+
+x-sre-tsk-mon-influxdb: &SRE_TSK_MON_INFLUXDB
+  SRE_TSK_MON_INFLUXDB_BKT: "sky-monitoring"
+  SRE_TSK_MON_INFLUXDB_ORG: "sky"
+  SRE_TSK_MON_INFLUXDB_TKN: "E8kzSTQ7X5Kg6GASThdZI0onp3ky7d3EJzukhar1JYuTyT9y_moQADLviyFudRL2Wu03Y9BPwaZY_BICEK9Blg=="
+
+# ----------------------------------------------------------------------------------------
+# Configuration: Telegraf
+# ----------------------------------------------------------------------------------------
+
+# This configuration is used for various services to use a previously provisioned InfluxDB.
+
+x-sre-tsk-mon-telegraf: &SRE_TSK_MON_TELEGRAF
+  SRE_TSK_MON_INFLUXDB_BKT: "sky-monitoring"
+  SRE_TSK_MON_INFLUXDB_ORG: "sky"
+  SRE_TSK_MON_INFLUXDB_TKN: "faG8IGmL4mmC7JiSZIl3jiU4PSHNGCiaH64sqpfSYblYU_ntGWMEbgV0sxI4QYao9oxIOaH0MrsFsubLRmjfxw=="
+
+# ----------------------------------------------------------------------------------------
+# Networks
+# ----------------------------------------------------------------------------------------
+
+networks:
+
+  # --------------------------------------------------------------------------------------
+  # Network
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_net_ext:
+    ipam:
+      config:
+        - subnet: "10.100.30.0/24"
+    name: "sre_tsk_mon_net_ext"
+
+  # --------------------------------------------------------------------------------------
+  # Network
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_net_int:
+    ipam:
+      config:
+        - subnet: "10.100.40.0/24"
+    name: "sre_tsk_mon_net_int"
+
+# ----------------------------------------------------------------------------------------
+# Secrets:
+# ----------------------------------------------------------------------------------------
+
+secrets:
+
+  # --------------------------------------------------------------------------------------
+  # Secret:
+  # --------------------------------------------------------------------------------------
+
+    sre_tsk_mon_influxdb_tkn:
+      file: "./sre_tsk_02_dkr_sec/sre_tsk_02_dkr_001_influxdb_tkn.sec"
+
+# ----------------------------------------------------------------------------------------
+# Services
+# ----------------------------------------------------------------------------------------
+
+services:
+
+  # --------------------------------------------------------------------------------------
+  # Service: Grafana
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_grafana:
+    depends_on:
+      sre_tsk_mon_grafana_db:
+        condition: service_healthy
+    environment:
+      <<: *SRE_TSK_MON
+      <<: *SRE_TSK_MON_GRAFANA
+      <<: *SRE_TSK_MON_INFLUXDB
+    image:
+      "grafana/grafana:8.5.3"
+    hostname:
+      "grafana"
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    networks:
+      - "sre_tsk_mon_net_int"
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart:
+      "always"
+    secrets:
+      - "sre_tsk_mon_influxdb_tkn"
+    user:
+      "${SRE_TSK_MON_USR_UID}:${SRE_TSK_MON_USR_GID}"
+    volumes:
+      - "./sre_tsk_02_grafana_dash/ec2/node/node.json:/etc/grafana/dashboards/ec2/node/node.json"
+      - "./sre_tsk_02_dkr_001_grafana.ini:/etc/grafana/grafana.ini"
+      - "./sre_tsk_02_dkr_001_grafana_dash.yml:/etc/grafana/provisioning/dashboards/dashboards.yml"
+      - "./sre_tsk_02_dkr_001_grafana_data.yml:/etc/grafana/provisioning/datasources/datasources.yml"
+      - "sre_tsk_mon_grafana:/var/lib/grafana:rw"
+      - "sre_tsk_mon_grafana_log:/var/log/grafana:rw"
+
+  # --------------------------------------------------------------------------------------
+  # Service: Grafana: Database
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_grafana_db:
+    environment:
+      <<: *SRE_TSK_MON_DB_POSTGRES
+    healthcheck:
+      interval:     "8s"
+      retries:      6
+      start_period: "12s"
+      test:         ["CMD", "/usr/bin/pg_isready", "--dbname", "grafana", "--user", "${SRE_TSK_MON_USR_NM}"]
+      timeout:      "2s"
+    hostname:
+      postgres
+    image:
+      postgres:14.3
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    networks:
+      - sre_tsk_mon_net_int
+    ports:
+     - "127.0.0.1:5432:5432"
+    restart:
+      "always"
+    user:
+      root # [REFACTOR] SHOULD NOT USE *root* HERE
+    volumes:
+      - "sre_tsk_mon_postgres:/var/lib/postgresql/data"
+
+  # --------------------------------------------------------------------------------------
+  # Service
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_grafana_proxy:
+    depends_on:
+      sre_tsk_mon_grafana_db:
+        condition: service_healthy
+    image:
+      "nginx:1.21.6"
+    labels:
+      - "traefik.docker.network=sre_tsk_mon_net_int"
+      - "traefik.enable=true"
+      - "traefik.http.routers.sre_tsk_mon_grafana_proxy_http.entrypoints=sky_http"
+      - "traefik.http.routers.sre_tsk_mon_grafana_proxy_http.rule=(Host(`grafana.sky.services.adam.horden.in`))"
+      - "traefik.http.services.sre_tsk_mon_grafana_proxy_http.loadbalancer.server.port=4200"
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    networks:
+      - "sre_tsk_mon_net_int"
+    ports:
+      - "127.0.0.1:4200:4200"
+    restart:
+      "always"
+    volumes:
+      - "./sre_tsk_02_dkr_001_grafana_proxy.cnf:/etc/nginx/conf.d/sky_mon.conf:ro"
+
+  # --------------------------------------------------------------------------------------
+  # Service: InfluxDB
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_influxdb:
+    environment:
+      INFLUXD_HTTP_BIND_ADDRESS: ":8086"
+    hostname:
+      "influxdb"
+    image:
+      "influxdb:2.2.0"
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    networks:
+      - "sre_tsk_mon_net_int"
+    ports:
+      - "8086:8086"
+    restart:
+      "always"
+    user:
+      root # [REFACTOR] SHOULD NOT USE *root* HERE
+    volumes:
+      - "sre_tsk_mon_influxdb:/var/lib/influxdb2:rw"
+
+  # --------------------------------------------------------------------------------------
+  # Service: InfluxDB: Proxy: Traefik
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_influxdb_proxy:
+    image:
+      "nginx:1.21.6"
+    labels:
+      - "traefik.docker.network=sre_tsk_mon_net_int"
+      - "traefik.enable=true"
+      - "traefik.http.routers.sre_tsk_mon_influxdb_proxy_http.entrypoints=sky_http"
+      - "traefik.http.routers.sre_tsk_mon_influxdb_proxy_http.rule=Host(`influxdb.sky.services.adam.horden.in`)"
+      - "traefik.http.services.sre_tsk_mon_influxdb_proxy_http.loadbalancer.server.port=4400"
+    networks:
+      - "sre_tsk_mon_net_int"
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    ports:
+      - "127.0.0.1:4400:4400"
+    restart:
+      "always"
+    volumes:
+      - "./sre_tsk_02_dkr_001_influxdb_proxy.cnf:/etc/nginx/conf.d/sky_mon.conf:ro"
+
+  # --------------------------------------------------------------------------------------
+  # Service: Prometheus
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_prometheus:
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/var/lib/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-admin-api"
+      - "--web.listen-address=:9090"
+      - "--web.enable-lifecycle"
+    hostname:
+      "prometheus"
+    image:
+      "prom/prometheus:v2.35.0"
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    networks:
+      - "sre_tsk_mon_net_int"
+    ports:
+      - "9090:9090"
+    restart:
+      "always"
+    user:
+      root # [REFACTOR] SHOULD NOT USE *root* HERE
+    volumes:
+      - "./sre_tsk_02_dkr_001_prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "sre_tsk_mon_prometheus:/var/lib/prometheus:rw"
+
+  # --------------------------------------------------------------------------------------
+  # Service: Prometheus: Proxy: Traefik
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_prometheus_proxy:
+    image:
+      "nginx:1.21.6"
+    labels:
+      - "traefik.docker.network=sre_tsk_mon_net_int"
+      - "traefik.enable=true"
+      - "traefik.http.routers.sre_tsk_mon_prometheus_proxy_http.entrypoints=sky_http"
+      - "traefik.http.routers.sre_tsk_mon_prometheus_proxy_http.rule=Host(`prometheus.sky.services.adam.horden.in`)"
+      - "traefik.http.services.sre_tsk_mon_prometheus_proxy_http.loadbalancer.server.port=4600"
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    networks:
+      - "sre_tsk_mon_net_int"
+    ports:
+      - "127.0.0.1:4600:4600"
+    restart:
+      "always"
+    volumes:
+      - "./sre_tsk_02_dkr_001_prometheus_proxy.cnf:/etc/nginx/conf.d/sky_mon.conf:ro"
+
+  # --------------------------------------------------------------------------------------
+  # Service
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_prometheus_exporter_node:
+    command:
+      - "--collector.filesystem.mount-points-exclude=^/(dev|etc|host|proc|sys)($$|/)"
+      - "--log.level=info"
+      - "--path.rootfs=/host"
+      - "--web.listen-address=:9100"
+    hostname:
+      "node_exporter"
+    image:
+      "prom/node-exporter:v1.3.1"
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    networks:
+      - "sre_tsk_mon_net_int"
+    ports:
+      - "9100:9100"
+    restart:
+      "always"
+    volumes:
+      - "/:/host:ro,rslave"
+
+  # --------------------------------------------------------------------------------------
+  # Service
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_prometheus_exporter_node_proxy:
+    image:
+      "nginx:1.21.6"
+    labels:
+      - "traefik.docker.network=sre_tsk_mon_net_int"
+      - "traefik.enable=true"
+      - "traefik.http.routers.sre_tsk_mon_prometheus_exporter_node_proxy_http.entrypoints=sky_http"
+      - "traefik.http.routers.sre_tsk_mon_prometheus_exporter_node_proxy_http.rule=Host(`node.prometheus.sky.services.adam.horden.in`)"
+      - "traefik.http.services.sre_tsk_mon_prometheus_exporter_node_proxy_http.loadbalancer.server.port=5200"
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    networks:
+      - "sre_tsk_mon_net_int"
+    ports:
+      - "127.0.0.1:5200:5200"
+    restart:
+      "always"
+    volumes:
+     - "./sre_tsk_02_dkr_001_prometheus_exporter_node_proxy.cnf:/etc/nginx/conf.d/sky_mon.conf:ro"
+
+  # --------------------------------------------------------------------------------------
+  # Service: Telegraf
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_telegraf:
+    environment:
+      <<: *SRE_TSK_MON_TELEGRAF
+    hostname:
+      "telegraf"
+    image:
+      telegraf:1.22.4
+    networks:
+      - "sre_tsk_mon_net_int"
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    ports:
+      - "127.0.0.1:8125:8125/udp"
+    restart:
+      "always"
+    secrets:
+      - "sre_tsk_mon_influxdb_tkn"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./sre_tsk_02_dkr_001_telegraf.conf:/etc/telegraf/telegraf.conf:ro"
+
+  # --------------------------------------------------------------------------------------
+  # Service: Proxy
+  # --------------------------------------------------------------------------------------
+
+  sre_tsk_mon_proxy:
+    command:
+      - "--accesslog=true"
+      - "--accesslog.filepath=/var/log/traefik/access.log"
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--certificatesresolvers.sky.acme.email=adam.horden+adam.horden.sky@horden.me"
+      - "--certificatesresolvers.sky.acme.httpchallenge=true"
+      - "--certificatesresolvers.sky.acme.httpchallenge.entrypoint=sky_http"
+      - "--certificatesresolvers.sky.acme.storage=/etc/acme/acme.json"
+      - "--entrypoints.sky_http.address=:80"
+      - "--entrypoints.sky_https.address=:443"
+      - "--log.level=INFO"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.manualRouting=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=sre_tsk_mon_net_ext"
+    hostname:
+      "sre_tsk_mon_proxy"
+    image:
+      "traefik:v2.6.6"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sky_proxy_http.entrypoints=sky_http"
+      - "traefik.http.routers.sky_proxy_http.rule=Host(`proxy.prometheus.sky.services.adam.horden.in`)"
+      - "traefik.http.routers.sky_proxy_http.service=api@internal"
+      - "traefik.http.routers.sky_proxy_metric_http.entrypoints=sky_http"
+      - "traefik.http.routers.sky_proxy_metric_http.rule=(Host(`proxy.prometheus.sky.services.adam.horden.in`) && PathPrefix(`/metrics`))"
+      - "traefik.http.routers.sky_proxy_metric_http.service=prometheus@internal"
+    logging:
+      driver:
+        "json-file"
+      options:
+        max-size:
+          "2048m"
+    networks:
+      - "sre_tsk_mon_net_ext"
+      - "sre_tsk_mon_net_int"
+    ports:
+      - "443:443"
+      - "80:80"
+    restart:
+      "always"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "sre_tsk_mon_log:/var/log/traefik:rw"
+      - "sre_tsk_mon_tls:/etc/acme:rw"
+
+# ----------------------------------------------------------------------------------------
+# Volumes
+# ----------------------------------------------------------------------------------------
+
+volumes:
+
+  sre_tsk_mon_grafana:     {}
+  sre_tsk_mon_grafana_log: {}
+  sre_tsk_mon_influxdb:    {}
+  sre_tsk_mon_log:         {}
+  sre_tsk_mon_postgres:    {}
+  sre_tsk_mon_prometheus:  {}
+  sre_tsk_mon_tls:         {}

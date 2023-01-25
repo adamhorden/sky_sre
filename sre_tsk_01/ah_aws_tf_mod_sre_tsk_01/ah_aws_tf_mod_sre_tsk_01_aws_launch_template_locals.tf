@@ -25,6 +25,21 @@ locals {
   # Local:
   # --------------------------------------------------------------------------------------
 
+  # local.ah_aws_tf_mod_sre_tsk_01_lch_tmpl_ins_typ
+
+  ah_aws_tf_mod_sre_tsk_01_lch_tmpl_ins_typ = format(
+    "%s",
+    lookup(
+      local.ah_aws_tf_mod.lt,
+      "instance_type",
+      tostring("")
+    )
+  )
+
+  # --------------------------------------------------------------------------------------
+  # Local:
+  # --------------------------------------------------------------------------------------
+
   # local.ah_aws_tf_mod_sre_tsk_01_lch_tmpl_key_nm
 
   ah_aws_tf_mod_sre_tsk_01_lch_tmpl_key_nm = format(

@@ -1,0 +1,33 @@
+apiVersion: 1
+
+# ----------------------------------------------------------------------------------------
+# Datasources
+# ----------------------------------------------------------------------------------------
+
+datasources:
+
+  # --------------------------------------------------------------------------------------
+  # Datasource: influxdb.sky.services.adam.horden.in
+  # --------------------------------------------------------------------------------------
+
+  - access: "proxy"
+    editable: "false"
+    jsonData:
+      defaultBucket: "${SRE_TSK_MON_INFLUXDB_BKT}"
+      organization: "${SRE_TSK_MON_INFLUXDB_ORG}"
+      version: "Flux"
+    name: "influxdb.sky.services.adam.horden.in"
+    secureJsonData:
+      token: "${SRE_TSK_MON_INFLUXDB_TKN}"
+    type: "influxdb"
+    url: "http://influxdb:8086"
+
+  # --------------------------------------------------------------------------------------
+  # Datasource: prometheus.monitoring.sky.internal.adam.horden.me
+  # --------------------------------------------------------------------------------------
+
+  - access: "proxy"
+    editable: "false"
+    name: "prometheus.monitoring.sky.internal.adam.horden.me"
+    type: "prometheus"
+    url: "http://prometheus:9090"

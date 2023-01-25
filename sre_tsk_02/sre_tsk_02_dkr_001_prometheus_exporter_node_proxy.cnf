@@ -1,0 +1,13 @@
+server {
+  listen 5200;
+  listen [::]:5200;
+  
+  server_name node.prometheus.sky.services.adam.horden.in;
+  
+  location / {
+    client_max_body_size 128m;
+    proxy_pass http://node_exporter:9100;
+    proxy_set_header X-Forwarded-For $remote_addr;
+  }
+
+}
