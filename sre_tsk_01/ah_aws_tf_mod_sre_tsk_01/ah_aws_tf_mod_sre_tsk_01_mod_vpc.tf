@@ -14,11 +14,14 @@ module "sre_tsk_01_vpc" {
   # Arguments:
   # --------------------------------------------------------------------------------------
 
-  azs             = local.ah_aws_tf_mod_sre_tsk_01_vpc_azs
-  cidr            = local.ah_aws_tf_mod_sre_tsk_01_vpc_cidr
-  name            = local.ah_aws_tf_mod_sre_tsk_01_vpc_nm
-  private_subnets = local.ah_aws_tf_mod_sre_tsk_01_vpc_pvt_sn
-  public_subnets  = local.ah_aws_tf_mod_sre_tsk_01_vpc_pub_sn
-  tags            = local.ah_aws_tf_mod_sre_tsk_01_vpc_tags
+  azs             = local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_azs
+  cidr            = local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_cidr
+  name            = local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_nm
+  private_subnets = local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_pvt_sn
+  public_subnets  = local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_pub_sn
+  tags            = local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_tags
+
+  enable_nat_gateway = true
+  single_nat_gateway = true
 
 }

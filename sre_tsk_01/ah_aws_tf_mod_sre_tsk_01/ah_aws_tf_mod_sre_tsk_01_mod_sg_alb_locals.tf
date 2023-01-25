@@ -10,28 +10,61 @@ locals {
   # Local:
   # --------------------------------------------------------------------------------------
 
-  # local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_azs
+  # local.ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_dsc
 
-  ah_aws_tf_mod_sre_tsk_01_mod_vpc_azs = formatlist(
-    "%s",
-    tolist(
-      [
-        format(
-          "%s%s",
-          local.ah_aws_rgn_eu_1,
-          "a"
-        ),
-        format(
-          "%s%s",
-          local.ah_aws_rgn_eu_1,
-          "b"
-        ),
-        format(
-          "%s%s",
-          local.ah_aws_rgn_eu_1,
-          "c"
+  ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_dsc = format(
+    "%s%s",
+    ": ",
+    upper(
+      join(
+        local.ah_aws_lbl_fmt_lbl_sep,
+        compact(
+          concat(
+            tolist(
+              [
+                join(
+                  local.ah_aws_lbl_fmt_lbl_sep,
+                  lookup(
+                    local.ah_aws_tf.lbl,
+                    "lbl_mod",
+                    tolist([])
+                  )
+                )
+              ]
+            ),
+            tolist(
+              [
+                join(
+                  local.ah_aws_lbl_fmt_lbl_sep,
+                  concat(
+                    lookup(
+                      local.ah_aws_tf.lbl,
+                      "lbl_mod_attrs",
+                      tolist([])
+                    ),
+                    tolist(
+                      [
+                        format(
+                          "%s",
+                          "alb"
+                        )
+                      ]
+                    )
+                  )
+                )
+              ]
+            ),
+            tolist(
+              [
+                join(
+                  local.ah_aws_lbl_fmt_lbl_sep,
+                  var.ah_aws_env
+                )
+              ]
+            )
+          )
         )
-      ]
+      )
     )
   )
 
@@ -39,24 +72,9 @@ locals {
   # Local:
   # --------------------------------------------------------------------------------------
 
-  # local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_cidr
+  # local.ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_nm
 
-  ah_aws_tf_mod_sre_tsk_01_mod_vpc_cidr = format(
-    "%s",
-    lookup(
-      local.ah_aws_tf_mod.vpc,
-      "cidr",
-      tostring("")
-    )
-  )
-
-  # --------------------------------------------------------------------------------------
-  # Local:
-  # --------------------------------------------------------------------------------------
-
-  # local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_nm
-
-  ah_aws_tf_mod_sre_tsk_01_mod_vpc_nm = format(
+  ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_nm = format(
     "%s",
     upper(
       join(
@@ -89,7 +107,7 @@ locals {
                       [
                         format(
                           "%s",
-                          "vpc"
+                          "alb"
                         )
                       ]
                     )
@@ -115,39 +133,9 @@ locals {
   # Local:
   # --------------------------------------------------------------------------------------
 
-  # local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_pub_sn
+  # local.ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_tags
 
-  ah_aws_tf_mod_sre_tsk_01_mod_vpc_pub_sn = formatlist(
-    "%s",
-    lookup(
-      local.ah_aws_tf_mod.vpc,
-      "public_subnets",
-      tolist([])
-    )
-  )
-
-  # --------------------------------------------------------------------------------------
-  # Local:
-  # --------------------------------------------------------------------------------------
-
-  # local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_pvt_sn
-
-  ah_aws_tf_mod_sre_tsk_01_mod_vpc_pvt_sn = formatlist(
-    "%s",
-    lookup(
-      local.ah_aws_tf_mod.vpc,
-      "private_subnets",
-      tolist([])
-    )
-  )
-
-  # --------------------------------------------------------------------------------------
-  # Local:
-  # --------------------------------------------------------------------------------------
-
-  # local.ah_aws_tf_mod_sre_tsk_01_mod_vpc_tags
-
-  ah_aws_tf_mod_sre_tsk_01_mod_vpc_tags = merge(
+  ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_tags = merge(
     tomap({}),
     tomap(
       {
@@ -197,10 +185,20 @@ locals {
                     [
                       join(
                         local.ah_aws_lbl_fmt_lbl_sep,
-                        lookup(
-                          local.ah_aws_tf.lbl,
-                          "lbl_mod_attrs",
-                          tolist([])
+                        concat(
+                          lookup(
+                            local.ah_aws_tf.lbl,
+                            "lbl_mod_attrs",
+                            tolist([])
+                          ),
+                          tolist(
+                            [
+                              format(
+                                "%s",
+                                "alb"
+                              )
+                            ]
+                          )
                         )
                       )
                     ]
@@ -245,6 +243,21 @@ locals {
         )
 
       }
+    )
+  )
+
+  # --------------------------------------------------------------------------------------
+  # Local:
+  # --------------------------------------------------------------------------------------
+
+  # local.ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_vpc_id
+
+  ah_aws_tf_mod_sre_tsk_01_mod_sg_alb_vpc_id = format(
+    "%s",
+    lookup(
+      module.sre_tsk_01_vpc,
+      "vpc_id",
+      tostring("")
     )
   )
 
